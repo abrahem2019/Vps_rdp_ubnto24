@@ -5,35 +5,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
-      - name: Install XRDP
+      - name: Setup Ubuntu RDP with Root Access
         run: |
-          sudo apt update
-          sudo DEBIAN_FRONTEND=noninteractive apt install -y xrdp ubuntu-desktop-minimal
-          sudo systemctl enable xrdp
-          sudo systemctl start xrdp
-          
-      - name: Configure Firewall and User
-        run: |
-          sudo ufw allow 3389
-          password=$(openssl rand -base64 16)
-          echo "root:$password" | sudo chpasswd
-          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
-          sudo systemctl restart sshd
-          
-      - name: Install Tailscale
-        run: |
-          curl -fsSL https://tailscale.com/install.sh | sh
-          sudo tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=ubuntu-root-${{ github.run_id }}
-          
-      - name: Show Connection Info
-        run: |
-          TS_IP=$(sudo tailscale ip -4)
-          echo "=========================================="
-          echo "🖥️  RDP Ready - Connect via Tailscale"
-          echo "IP: $TS_IP"
-          echo "User: root" 
-          echo "Pass: $password"
-          echo "=========================================="
-          
-      - name: Keep Alive
-        run: while true; do sleep 60; done
+          sudo apt update && \
+          sudo DEBIAN_FRONTEND=noninteractive apt install -y xrdp ubuntu-desktop-minimal && \
+          sudo systemctl enable xrdp && sudo systemctl start xrdp && \
+          sudo ufw --force enable && sudo ufw allow 3389 && \
+          password=$(openssl rand -base64 16) && \
+          echo "root:$password" | sudo chpasswd && \
+          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config && \
+          sudo systemctl restart sshd && \
+          curl -fsSL https://tailscale.com/install.sh | sh && \
+          sudo tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=ubuntu-root-${{ github.run_id }} && \
+          TS_IP=$(sudo tailscale ip -4) && \
+          echo "==========================================" && \
+          echo "🖥️  RDP Ready - Connect via Tailscale" && \
+          echo "IP: $TS_IP" && \
+          echo "User: root" && \
+          echo "Pass: $password" && \
+          echo "==========================================" && \
+          while true; do sleep 60; done
